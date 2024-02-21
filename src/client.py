@@ -33,10 +33,12 @@ class Client:
         self.samples_width = samples_width
         self.buffering_strategy = BufferingStrategyFactory.create_buffering_strategy(self.config['processing_strategy'], self, **self.config['processing_args'])
 
+    # 更新缓冲区策略
     def update_config(self, config_data):
         self.config.update(config_data)
         self.buffering_strategy = BufferingStrategyFactory.create_buffering_strategy(self.config['processing_strategy'], self, **self.config['processing_args'])
 
+    # 将数据加载进缓冲区
     def append_audio_data(self, audio_data):
         self.buffer.extend(audio_data)
         self.total_samples += len(audio_data) / self.samples_width
@@ -49,6 +51,7 @@ class Client:
 
     def get_file_name(self):
         return f"{self.client_id}_{self.file_counter}.wav"
-    
+
+    # 处理音频
     def process_audio(self, websocket, vad_pipeline, asr_pipeline):
         self.buffering_strategy.process_audio(websocket, vad_pipeline, asr_pipeline)
