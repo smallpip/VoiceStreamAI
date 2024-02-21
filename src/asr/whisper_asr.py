@@ -13,7 +13,7 @@ class WhisperASR(ASRInterface):
 
     async def transcribe(self, client):
 
-        # 将文件储存至缓存
+        # 将缓存区的 音频流 保存至本地
         file_path = await save_audio_to_file(client.scratch_buffer, client.get_file_name())
         
         if client.config['language'] is not None:
