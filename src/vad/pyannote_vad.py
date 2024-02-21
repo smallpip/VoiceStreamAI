@@ -33,12 +33,18 @@ class PyannoteVAD(VADInterface):
             raise ValueError("Missing required env var in PYANNOTE_AUTH_TOKEN or argument in --vad-args: 'auth_token'")
         
         pyannote_args = kwargs.get('pyannote_args', {"onset": 0.5, "offset": 0.5, "min_duration_on": 0.3, "min_duration_off": 0.3})
+
+        # 设置身份验证，加载模型
         self.model = Model.from_pretrained(model_name, use_auth_token=auth_token)
         self.vad_pipeline = VoiceActivityDetection(segmentation=self.model)
         self.vad_pipeline.instantiate(pyannote_args)
 
     async def detect_activity(self, client):
+        
+        # 将缓存区音频保存至本地文件
         audio_file_path = await save_audio_to_file(client.scratch_buffer, client.get_file_name())
+
+        # 推理音频文件
         vad_results = self.vad_pipeline(audio_file_path)
         remove(audio_file_path)
         vad_segments = []
