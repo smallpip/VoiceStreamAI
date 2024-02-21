@@ -41,7 +41,8 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
         self.error_if_not_realtime = os.environ.get('ERROR_IF_NOT_REALTIME')
         if not self.error_if_not_realtime:
             self.error_if_not_realtime = kwargs.get('error_if_not_realtime', False)
-        
+
+        # 同步锁
         self.processing_flag = False
 
     def process_audio(self, websocket, vad_pipeline, asr_pipeline):
@@ -56,8 +57,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             vad_pipeline: The voice activity detection pipeline.
             asr_pipeline: The automatic speech recognition pipeline.
         """
+        # 设定切片大小
         chunk_length_in_bytes = self.chunk_length_seconds * self.client.sampling_rate * self.client.samples_width
+        
+        # 如果缓冲区大于切片大小要求，就处理缓冲数据
         if len(self.client.buffer) > chunk_length_in_bytes:
+            # 标志位，用于同步操作。以确保在处理上一个音频切片时，不会同时处理下一个音频切片。
             if self.processing_flag:
                 exit("Error in realtime processing: tried processing a new chunk while the previous one was still being processed")
 
@@ -80,15 +85,21 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             asr_pipeline: The automatic speech recognition pipeline.
         """   
         start = time.time()
+
+        # 检测音频活动的区间
         vad_results = await vad_pipeline.detect_activity(self.client)
 
+        # 如果没有检测到人说话
         if len(vad_results) == 0:
             self.client.scratch_buffer.clear()
             self.client.buffer.clear()
             self.processing_flag = False
             return
 
+        # 检测最新切片结束的时间
         last_segment_should_end_before = ((len(self.client.scratch_buffer) / (self.client.sampling_rate * self.client.samples_width)) - self.chunk_offset_seconds)
+        
+        #如果音频活动的区间，在切片时间范围内。处理音频，返回前段数据。
         if vad_results[-1]['end'] < last_segment_should_end_before:
             transcription = await asr_pipeline.transcribe(self.client)
             if transcription['text'] != '':
