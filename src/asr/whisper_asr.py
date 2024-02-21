@@ -5,10 +5,15 @@ import os
 
 class WhisperASR(ASRInterface):
     def __init__(self, **kwargs):
+        # 配置 whisper 模型
         model_name = kwargs.get('model_name', "openai/whisper-large-v3")
+
+        # 配置 pipeline(管道描述，模型名)
         self.asr_pipeline = pipeline("automatic-speech-recognition", model=model_name)
 
     async def transcribe(self, client):
+
+        # 将文件储存至缓存
         file_path = await save_audio_to_file(client.scratch_buffer, client.get_file_name())
         
         if client.config['language'] is not None:
