@@ -31,7 +31,7 @@ def main():
     # 初始化 whisper
     asr_pipeline = ASRFactory.create_asr_pipeline(args.asr_type, **asr_args)
 
-    # 启动服务端
+    # 运行服务端
     server = Server(vad_pipeline, asr_pipeline, host=args.host, port=args.port, sampling_rate=16000, samples_width=2)
 
     asyncio.get_event_loop().run_until_complete(server.start())
